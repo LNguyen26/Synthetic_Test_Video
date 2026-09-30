@@ -50,16 +50,25 @@ def mask(cx):
     return ((x - cx)/a)**2 + ((y - H//2)/b)**2 <= 1 #ellipse, doesn't have cy bc it only moves horizontally
 
 
-def chained_loop(mask, sched):
+BG_L, FISH_L = 180, 60
+
+def render(m):
+    return np.where(m, FISH_L, BG_L).astype(np.uint8) #returns a 2D array of the image, with the mask applied
+#depends on true/false (puts the mask into a brightness image)
+
+
+def chained_loop(masks):
     #builds each frame once, holds it in prev, measures against next frame, then moves on to the next frame
-    AREA = np.sum(mask(sched[0])) #first frame, pixel count is area
+    areas = []
     prev = None #initializes prev frame as nothing (bc the prev of the first frame is nothing)
     d_list = []
-    for cx in sched:
-        cur = mask(cx)
-        assert cur.sum() == AREA
+    for cur in masks:
+        assert cur.dtype == bool
+        areas.append(cur.sum())
         if prev is not None:
             d_list.append(change(prev, cur)) #change between frames
         prev = cur
-    assert len(d_list) == len(sched) - 1
-    return d_list
+    assert len(d_list) == len(masks) - 1
+    return np.array(d_list), np.array(areas)
+
+#next: have two masks: one true and one estimated from grayscale, compare them to each other
