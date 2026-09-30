@@ -44,3 +44,22 @@ sched += sweep(sched[-1],  4, 10) #4px 10s
 sched += hold(sched[-1], 20) #hold 20s still
 sched += sweep(sched[-1], 40, 10) #40px 10s
 #sched is a list that holds all the positions of the ellipse for each frame
+
+
+def mask(cx):
+    return ((x - cx)/a)**2 + ((y - H//2)/b)**2 <= 1 #ellipse, doesn't have cy bc it only moves horizontally
+
+
+def chained_loop(mask, sched):
+    #builds each frame once, holds it in prev, measures against next frame, then moves on to the next frame
+    AREA = np.sum(mask(sched[0])) #first frame, pixel count is area
+    prev = None #initializes prev frame as nothing (bc the prev of the first frame is nothing)
+    d_list = []
+    for cx in sched:
+        cur = mask(cx)
+        assert cur.sum() == AREA
+        if prev is not None:
+            d_list.append(change(prev, cur)) #change between frames
+        prev = cur
+    assert len(d_list) == len(sched) - 1
+    return d_list
