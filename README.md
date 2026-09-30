@@ -1,0 +1,1 @@
+Uses NumPy to generate a synthetic grayscale video which creates a darker ellipse against a lighter background and moves it horizontally across the screen. The aim is to test my approach to tracking and quantifying an object's movement through the change in pixels from frame to frame.
