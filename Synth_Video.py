@@ -71,4 +71,24 @@ def chained_loop(masks):
     assert len(d_list) == len(masks) - 1
     return np.array(d_list), np.array(areas)
 
-#next: have two masks: one true and one estimated from grayscale, compare them to each other
+EMPTY_SECS = 10
+empty_m = np.zeros((H, W), dtype=bool) #background frame
+frames = [render(empty_m) for _ in range(EMPTY_SECS * FPS)] \
+    + [render(mask(cx)) for cx in sched] #background frames at the start 
+    # + frames with the ellipse moving according to sched
+    
+
+n_empty = EMPTY_SECS * FPS
+
+
+stack = np.stack(frames[:n_empty]).astype(np.int16) #stack empty frames into 3D background array
+bg = stack.mean(axis = 0) #average empty frames to get background (crush to 2D array)
+tau = max(float(np.percentile(np.abs(stack - bg), 99.9)), 1.0) #99.9th percentile of the absolute difference between each frame and the background, used for thresholding
+
+
+masks_true = [mask(cx) for cx in sched] #list of masks for each frame, based on the positions in sched
+masks_est = [np.abs(f.astype(np.int16) - bg) > tau for f in frames[n_empty:]] #list of estimated masks for each frame, based on the difference from the background and the threshold tau
+
+
+d_true, area_true = chained_loop(masks_true) #true change and area values for each frame
+d_est, area_est = chained_loop(masks_est) #estimated change and area values for each frame
